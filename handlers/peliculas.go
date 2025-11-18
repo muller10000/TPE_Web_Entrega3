@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/muller10000/TPE_Web_Entrega3/repository"
 )
@@ -19,6 +20,18 @@ type CreateMovieRequest struct {
 	Year     *int32  `json:"year"`
 	Genre    *string `json:"genre"`
 	Rating   *string `json:"rating"`
+}
+
+// Estructura DTO para RESPONDER (Salida limpia)
+
+type MovieResponse struct {
+	ID        int32     `json:"id"`
+	Title     string    `json:"title"`
+	Director  string    `json:"director"`
+	Year      int32     `json:"year"`
+	Genre     string    `json:"genre"`
+	Rating    string    `json:"rating"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 // Funciones auxiliares para manejar los atributos que pueden ser NULL (ya que estos se convierten en STRUCT)
@@ -49,11 +62,31 @@ func NewHandlerPeliculas(queries *repository.Queries) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
+			// Obtener los datos "crudos" de la base de datos
 			movies, err := queries.ListMovies(context.Background())
 			if err != nil {
-				panic(err)
+				http.Error(w, "Error interno del servidor", http.StatusInternalServerError)
+				return
 			}
-			json.NewEncoder(w).Encode(movies)
+
+			var response []MovieResponse
+
+			// Bucle de traducción (Mapeo). Cada película de la BD a formato JSON
+			for _, m := range movies {
+				response = append(response, MovieResponse{
+					ID:        m.ID,
+					Title:     m.Title,
+					Director:  m.Director.String,
+					Year:      m.Year.Int32,
+					Genre:     m.Genre.String,
+					Rating:    m.Rating.String,
+					CreatedAt: m.CreatedAt,
+				})
+			}
+
+			//Indicar al navegador que enviamos JSON y enviar la lista limpia
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(response)
 
 		case http.MethodPost:
 			var req CreateMovieRequest
@@ -81,8 +114,21 @@ func NewHandlerPeliculas(queries *repository.Queries) http.HandlerFunc {
 				return
 			}
 
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(movie)
+
+			// Mapeamos el resultado de la BD a tu estructura limpia
+			response := MovieResponse{
+				ID:        movie.ID,
+				Title:     movie.Title,
+				Director:  movie.Director.String,
+				Year:      movie.Year.Int32,
+				Genre:     movie.Genre.String,
+				Rating:    movie.Rating.String,
+				CreatedAt: movie.CreatedAt,
+			}
+
+			json.NewEncoder(w).Encode(response)
 
 		default:
 			http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
@@ -113,11 +159,24 @@ func NewHandlerPeliculaByID(queries *repository.Queries) http.HandlerFunc {
 				http.Error(w, "Error al obtener película", http.StatusInternalServerError)
 				return
 			}
-			json.NewEncoder(w).Encode(movie)
+
+			// Mapeamos el resultado a la respuesta limpia
+			response := MovieResponse{
+				ID:        movie.ID,
+				Title:     movie.Title,
+				Director:  movie.Director.String,
+				Year:      movie.Year.Int32,
+				Genre:     movie.Genre.String,
+				Rating:    movie.Rating.String,
+				CreatedAt: movie.CreatedAt,
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(response)
 
 		case http.MethodPut:
 			// Actualizar película
-			var req CreateMovieRequest
+			var req CreateMovieRequest // Reutilizamos tu struct de creación
 			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 				http.Error(w, "JSON inválido", http.StatusBadRequest)
 				return
@@ -141,7 +200,20 @@ func NewHandlerPeliculaByID(queries *repository.Queries) http.HandlerFunc {
 				http.Error(w, "Error al actualizar película", http.StatusInternalServerError)
 				return
 			}
-			json.NewEncoder(w).Encode(movie)
+
+			// Mapeamos el resultado a la respuesta limpia
+			responsePut := MovieResponse{
+				ID:        movie.ID,
+				Title:     movie.Title,
+				Director:  movie.Director.String,
+				Year:      movie.Year.Int32,
+				Genre:     movie.Genre.String,
+				Rating:    movie.Rating.String,
+				CreatedAt: movie.CreatedAt,
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(responsePut)
 
 		case http.MethodDelete:
 			// Verificar si existe
@@ -160,7 +232,6 @@ func NewHandlerPeliculaByID(queries *repository.Queries) http.HandlerFunc {
 				return
 			}
 			w.WriteHeader(http.StatusNoContent)
-			w.Write([]byte("Película eliminada correctamente"))
 
 		}
 	}
