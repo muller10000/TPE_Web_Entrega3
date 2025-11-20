@@ -2,7 +2,7 @@
 
 # Autor: Matías Muller
 
-# Proyecto: Películas 3ra Entrega
+# Proyecto: Películas 5ta Entrega (TP5)
 
 # Dominio de la aplicación
 
@@ -49,19 +49,3 @@ chmod +x runtest.sh
 - Construye la app (build del binario con Docker).
 - Levanta los contenedores (DB + API).
 - Ejecuta los tests CRUD automáticamente.
-
-# 💻 Acceso al Frontend (TP4)
-
-La aplicación (API + Frontend) se sirve desde el mismo contenedor Go.
-
-Una vez que el script runtest.sh termine (o si levantas los servicios manualmente con docker compose up), la aplicación quedará corriendo en segundo plano.
-
-Para acceder a la aplicación web, abre tu navegador y visita:
-
-http://localhost:8080
-
-Podrás ver el formulario, agregar películas a la base de datos, ver la lista y eliminarlas, todo interactuando con la API de Go.
-
-Para detener la aplicación:
-
-docker compose down
