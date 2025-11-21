@@ -1,0 +1,14 @@
+package views
+
+// pagina principal, une todo usando el layout.
+
+import "github.com/muller10000/TPE_Web_Entrega3/repository"
+
+templ IndexPage(movies []repository.Movie) {
+	@Layout("Catálogo de Películas") {
+		<h1>Mi Catálogo de Películas</h1>
+		@MovieForm()
+		<hr/>
+		@MovieList(movies)
+	}
+}

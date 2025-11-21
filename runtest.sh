@@ -1,71 +1,74 @@
 #!/bin/bash
 
-# Este script construye, levanta y prueba la aplicación completa.
+# Script de Automatización para TPE Web (Versión Estable)
+# Autor: Matías Muller
 
-# Salir inmediatamente si un comando falla
 set -e
 
-echo "1. Limpiando entorno anterior (contenedores y volúmenes)..."
+echo "============================================"
+echo "🚀 INICIANDO CONSTRUCCIÓN Y EJECUCIÓN"
+echo "============================================"
+
+# 1. Generación de Código (Requisito de la nueva entrega)
+# Esto debe ocurrir ANTES de que Docker intente compilar
+echo ""
+echo "🔨 1. Generando código Go (Templ y SQLC)..."
+
+# Generar SQLC si está instalado
+if command -v sqlc &> /dev/null; then
+    echo "   -> Ejecutando sqlc generate..."
+    sqlc generate
+fi
+
+# Generar Templ (CRÍTICO)
+if command -v templ &> /dev/null; then
+    echo "   -> Ejecutando templ generate..."
+    templ generate
+else
+    echo "❌ ERROR: 'templ' no encontrado."
+    echo "   Es necesario para compilar las vistas."
+    echo "   Instálalo con: go install github.com/a-h/templ/cmd/templ@latest"
+    exit 1
+fi
+
+# 2. Limpieza del entorno previo
+echo ""
+echo "🧹 2. Limpiando entorno Docker anterior..."
 docker compose down -v
 
-echo "2. Construyendo la imagen de la API Go (sin caché)..."
+# 3. Construcción de la imagen
+echo ""
+echo "🐳 3. Construyendo imagen Docker..."
+# Usamos --no-cache para asegurar que tome los archivos _templ.go recién generados
 docker compose build --no-cache
 
-echo "▶3. Levantando servicios (API + DB) en SEGUNDO PLANO..."
+# 4. Levantamiento de servicios
+echo ""
+echo "▶️  4. Levantando servicios en segundo plano..."
 docker compose up -d
 
-echo "4. Esperando 5 segundos para que la API y DB inicien correctamente..."
+# 5. Espera de arranque
+echo ""
+echo "⏳ 5. Esperando servicios (5s)..."
 sleep 5
 
-echo "5. Ejecutando tests CRUD (API) con cURL..."
-echo "------------------------------------------------"
+# 6. Verificación de Salud (Health Check)
+# Comprobamos que la página de inicio (SSR) responda correctamente
+echo ""
+echo "🔍 6. Verificando estado..."
+HTTP_STATUS=$(curl -o /dev/null -s -w "%{http_code}\n" http://localhost:8080)
 
-echo " Creando 3 películas (POST)..."
-curl -s -X POST http://localhost:8080/peliculas \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Matrix","director":"Wachowski","year":1999,"genre":"Sci-Fi", "rating":"9.0"}'
-echo ""
-curl -s -X POST http://localhost:8080/peliculas \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Inception","director":"Christopher Nolan","year":2010,"genre":"Sci-Fi", "rating":"8.8"}'
-echo ""
-curl -s -X POST http://localhost:8080/peliculas \
-  -H "Content-Type: application/json" \
-  -d '{"title":"The Godfather","director":"Francis Ford Coppola","year":1972,"genre":"Crime", "rating":"9.2"}'
-echo ""
+if [ "$HTTP_STATUS" == "200" ]; then
+    echo "✅ Servidor respondiendo correctamente (HTTP 200 OK)."
+else
+    echo "⚠️  El servidor respondió con estado: $HTTP_STATUS."
+    echo "    Revisa los logs con 'docker compose logs' para ver detalles."
+fi
 
-echo " Listando todas las películas (GET)..."
-curl -s http://localhost:8080/peliculas
 echo ""
+echo "============================================"
+echo "🎉 LISTO PARA USAR"
+echo "============================================"
+echo "👉 http://localhost:8080"
+echo "🛑 Para detener: docker compose down"
 echo ""
-
-echo " Actualizando película (ID=2) (PUT)..."
-curl -s -X PUT http://localhost:8080/peliculas/2 \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Inception Updated","director":"Christopher Nolan","year":2010,"genre":"Thriller", "rating":"9.1"}'
-echo ""
-
-echo " Obteniendo película por ID (ID=2) (GET)..."
-curl -s http://localhost:8080/peliculas/2
-echo ""
-echo ""
-
-echo " Eliminando película (ID=1) (DELETE)..."
-curl -s -X DELETE http://localhost:8080/peliculas/1
-echo ""
-
-echo " Listando películas después de la eliminación (GET)..."
-curl -s http://localhost:8080/peliculas
-echo ""
-echo ""
-
-echo "------------------------------------------------"
-echo "✅ ¡Pruebas de API completadas!"
-echo ""
-echo "ℹ️  La aplicación sigue corriendo en segundo plano."
-echo "    (Instrucciones de acceso para TP4)"
-echo ""
-echo "    Puedes acceder al frontend en:"
-echo "    ➡️  http://localhost:8080"
-echo ""
-echo "    Para detener la aplicación, ejecuta: docker compose down"

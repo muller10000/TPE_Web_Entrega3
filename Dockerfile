@@ -1,19 +1,23 @@
-# Etapa 1: build
-FROM golang:1.25 AS builder
+# Usamos la imagen oficial estándar (basada en Debian)
+# Esto evita los problemas de red/DNS de Alpine en tu entorno
+FROM golang:1.23
+
 WORKDIR /app
 
-# Copiar módulos y dependencias
+# Copiar dependencias
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copiar el resto del código fuente
+# Copiar todo el código (incluyendo las vistas generadas por templ)
 COPY . .
 
 # Compilar el binario
-RUN apt-get update && apt-get install -y curl && \
-rm -rf /var/lib/apt/lists/* && go build -o peliculas-api .
+# No necesitamos instalar curl extra, la imagen base ya tiene lo necesario
+RUN go build -o peliculas-api .
 
+# Variables de entorno y puerto
 ENV PORT=8080
 EXPOSE 8080
 
-CMD ["/app/peliculas-api"]
+# Ejecutar
+CMD ["./peliculas-api"]

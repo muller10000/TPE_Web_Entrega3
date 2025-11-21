@@ -11,10 +11,6 @@ import (
 	"github.com/muller10000/TPE_Web_Entrega3/repository"
 )
 
-var queries *repository.Queries
-
-// connectDB() devuelve un *sql.DB que se pasa a repository.New(db).
-
 func connectDB() (*sql.DB, error) {
 	host := os.Getenv("DB_HOST")
 	port := os.Getenv("DB_PORT")
@@ -29,31 +25,26 @@ func connectDB() (*sql.DB, error) {
 }
 
 func main() {
-
-	// Servir archivos estáticos (de la entrega 1)
+	// 1. Servir archivos estáticos (CSS, Imágenes)
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
+	// 2. Conexión DB
 	db, err := connectDB()
-
 	if err != nil {
-		panic(fmt.Sprintf("No se pudo conectar a la base de datos: %v", err))
+		panic(err)
 	}
+	queries := repository.New(db)
 
-	queries = repository.New(db)
+	// 3. Inicializar Handlers
+	h := handlers.NewHandlerPeliculas(queries)
 
-	// Servir index.html en la raíz
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "index.html")
-	})
+	// 4. Definir Rutas (SSR)
+	http.HandleFunc("/", h.HandleIndex)                   // GET: Ver lista y form
+	http.HandleFunc("/peliculas", h.HandleCreate)         // POST: Crear
+	http.HandleFunc("/peliculas/delete/", h.HandleDelete) // POST: Eliminar
 
-	// GET y POST
-	http.HandleFunc("/peliculas", handlers.NewHandlerPeliculas(queries))
-
-	// GET, PUT, DELETE por ID
-	http.HandleFunc("/peliculas/", handlers.NewHandlerPeliculaByID(queries))
-
-	fmt.Println("Servidor escuchando en http://localhost:8080")
+	fmt.Println("Servidor SSR corriendo en http://localhost:8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		fmt.Println("Error al iniciar servidor:", err)
 	}
