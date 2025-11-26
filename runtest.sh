@@ -1,61 +1,47 @@
 #!/bin/bash
 
-# Script de Automatización para TPE Web (Versión Estable)
-# Autor: Matías Muller
+# Script de Automatización para TPE Web
 
 set -e
 
 echo "============================================"
-echo "🚀 INICIANDO CONSTRUCCIÓN Y EJECUCIÓN"
+echo "🚀 INICIANDO CONSTRUCCIÓN Y EJECUCIÓN (Dockerizado)"
 echo "============================================"
 
-# 1. Generación de Código (Requisito de la nueva entrega)
-# Esto debe ocurrir ANTES de que Docker intente compilar
-echo ""
-echo "🔨 1. Generando código Go (Templ y SQLC)..."
-
-# Generar SQLC si está instalado
+# 1. Generación de Código SQLC (Opcional, si tienes sqlc local)
+# Si no tienes sqlc, asumimos que el código repo/ ya fue commiteado o generado.
 if command -v sqlc &> /dev/null; then
-    echo "   -> Ejecutando sqlc generate..."
+    echo "🔨 Generando código DB (SQLC)..."
     sqlc generate
+else
+    echo "⚠️  SQLC no encontrado localmente. Se usará el código existente en repository/."
 fi
 
-# Generar Templ (CRÍTICO)
-if command -v templ &> /dev/null; then
-    echo "   -> Ejecutando templ generate..."
-    templ generate
-else
-    echo "❌ ERROR: 'templ' no encontrado."
-    echo "   Es necesario para compilar las vistas."
-    echo "   Instálalo con: go install github.com/a-h/templ/cmd/templ@latest"
-    exit 1
-fi
 
 # 2. Limpieza del entorno previo
 echo ""
-echo "🧹 2. Limpiando entorno Docker anterior..."
+echo "🧹 1. Limpiando entorno Docker anterior..."
 docker compose down -v
 
 # 3. Construcción de la imagen
 echo ""
-echo "🐳 3. Construyendo imagen Docker..."
-# Usamos --no-cache para asegurar que tome los archivos _templ.go recién generados
+echo "🐳 2. Construyendo imagen Docker (Generando vistas dentro del contenedor)..."
+# Usamos --no-cache para forzar la regeneración de templ dentro del build
 docker compose build --no-cache
 
 # 4. Levantamiento de servicios
 echo ""
-echo "▶️  4. Levantando servicios en segundo plano..."
+echo "▶️  3. Levantando servicios en segundo plano..."
 docker compose up -d
 
 # 5. Espera de arranque
 echo ""
-echo "⏳ 5. Esperando servicios (5s)..."
+echo "⏳ 4. Esperando servicios (5s)..."
 sleep 5
 
 # 6. Verificación de Salud (Health Check)
-# Comprobamos que la página de inicio (SSR) responda correctamente
 echo ""
-echo "🔍 6. Verificando estado..."
+echo "🔍 5. Verificando estado..."
 HTTP_STATUS=$(curl -o /dev/null -s -w "%{http_code}\n" http://localhost:8080)
 
 if [ "$HTTP_STATUS" == "200" ]; then
