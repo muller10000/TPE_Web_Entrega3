@@ -1,20 +1,21 @@
-# Usamos la imagen oficial estándar de Go
+# Usamos la imagen oficial estándar de Go 1.23
 FROM golang:1.23
 
 WORKDIR /app
 
-# 1. Instalar la herramienta templ dentro del contenedor
+# 1. Instalar herramientas necesarias (templ y sqlc)
 RUN go install github.com/a-h/templ/cmd/templ@latest
+RUN go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
 
 # 2. Copiar dependencias
 COPY go.mod go.sum ./
 RUN go mod download
 
-# 3. Copiar todo el código fuente (archivos .go, .templ, sql, etc.)
+# 3. Copiar todo el código fuente
 COPY . .
 
-# 4. Generar el código templ DENTRO del build
-# Esto crea los archivos _templ.go antes de compilar
+# 4. Generar código (Orden importante: SQLC primero, luego Templ)
+RUN sqlc generate
 RUN templ generate
 
 # 5. Compilar el binario

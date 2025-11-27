@@ -18,3 +18,10 @@ type Movie struct {
 	Rating    sql.NullString
 	CreatedAt time.Time
 }
+
+type User struct {
+	ID        int32
+	Username  string
+	Password  string
+	CreatedAt time.Time
+}

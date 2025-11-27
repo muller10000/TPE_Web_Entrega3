@@ -45,6 +45,27 @@ func (q *Queries) CreateMovie(ctx context.Context, arg CreateMovieParams) (Movie
 	return i, err
 }
 
+const createUser = `-- name: CreateUser :one
+INSERT INTO users (username, password) VALUES ($1, $2) RETURNING id, username, password, created_at
+`
+
+type CreateUserParams struct {
+	Username string
+	Password string
+}
+
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, createUser, arg.Username, arg.Password)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Password,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const deleteMovie = `-- name: DeleteMovie :exec
 DELETE FROM movies WHERE id = $1
 `
@@ -68,6 +89,23 @@ func (q *Queries) GetMovie(ctx context.Context, id int32) (Movie, error) {
 		&i.Year,
 		&i.Genre,
 		&i.Rating,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getUser = `-- name: GetUser :one
+SELECT id, username, password, created_at FROM users WHERE username = $1
+`
+
+// NUEVAS QUERIES: Usuarios
+func (q *Queries) GetUser(ctx context.Context, username string) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUser, username)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Password,
 		&i.CreatedAt,
 	)
 	return i, err

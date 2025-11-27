@@ -8,7 +8,6 @@ package views
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-// Renderiza el formulario para crear entidades. Notar que el action apunta a /peliculas con método POST.
 func MovieForm() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -30,7 +29,7 @@ func MovieForm() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<form id=\"form-pelicula\" action=\"/peliculas\" method=\"POST\" class=\"form-container\"><h2>Agregar Nueva Película</h2><div class=\"form-grid\"><div><label for=\"title\">Título:</label> <input type=\"text\" id=\"title\" name=\"title\" required></div><div><label for=\"director\">Director:</label> <input type=\"text\" id=\"director\" name=\"director\" required></div><div><label for=\"year\">Año:</label> <input type=\"number\" id=\"year\" name=\"year\" min=\"1800\" required></div><div><label for=\"genre\">Género:</label> <input type=\"text\" id=\"genre\" name=\"genre\" required></div><div><label for=\"rating\">Calificación (1-10):</label> <input type=\"number\" id=\"rating\" name=\"rating\" min=\"0\" max=\"10\" step=\"0.1\" required></div></div><button type=\"submit\">Agregar Película</button></form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<form id=\"form-pelicula\" class=\"form-container\" hx-post=\"/peliculas\" hx-target=\"#movie-list-container\" hx-swap=\"outerHTML\" hx-on::after-request=\"if(event.detail.successful) this.reset()\"><h2>Agregar Nueva Película</h2><div class=\"form-grid\"><div><label for=\"title\">Título:</label> <input type=\"text\" id=\"title\" name=\"title\" required></div><div><label for=\"director\">Director:</label> <input type=\"text\" id=\"director\" name=\"director\" required></div><div><label for=\"year\">Año:</label> <input type=\"number\" id=\"year\" name=\"year\" min=\"1800\" required></div><div><label for=\"genre\">Género:</label> <input type=\"text\" id=\"genre\" name=\"genre\" required></div><div><label for=\"rating\">Calificación (1-10):</label> <input type=\"number\" id=\"rating\" name=\"rating\" min=\"0\" max=\"10\" step=\"0.1\" required></div></div><button type=\"submit\">Agregar Película</button></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

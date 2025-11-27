@@ -25,7 +25,6 @@ func connectDB() (*sql.DB, error) {
 }
 
 func main() {
-	// Servir estáticos (CSS)
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
@@ -37,17 +36,26 @@ func main() {
 
 	h := handlers.NewHandlerPeliculas(queries)
 
-	// Definición de Rutas
+	// --- RUTAS PÚBLICAS ---
+	http.HandleFunc("/login", h.HandleLoginShow)
+	http.HandleFunc("/signin", h.HandleSignin)
+	http.HandleFunc("/logout", h.HandleLogout)
 
-	// 1. Carga Inicial (Página completa)
-	http.HandleFunc("/", h.HandleIndex)
+	// --- RUTAS PROTEGIDAS (Middleware) ---
+	// La raíz ahora está protegida
+	http.HandleFunc("/", handlers.AuthMiddleware(h.HandleIndex))
 
-	// 2. Creación (AJAX vía HTMX)
-	http.HandleFunc("POST /peliculas", h.HandleCreate)
+	// Operaciones de Películas protegidas
+	http.HandleFunc("POST /peliculas", handlers.AuthMiddleware(h.HandleCreate))
 
-	// 3. Eliminación (AJAX vía HTMX)
-	// Manejo manual del método DELETE para compatibilidad
+	// Manejo manual de DELETE protegido
 	http.HandleFunc("/peliculas/", func(w http.ResponseWriter, r *http.Request) {
+		// Validar sesión antes de nada
+		if !handlers.IsAuthenticated(r) {
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+
 		if r.Method == http.MethodDelete {
 			h.HandleDelete(w, r)
 		} else {
@@ -55,7 +63,7 @@ func main() {
 		}
 	})
 
-	fmt.Println("Servidor HTMX corriendo en http://localhost:8080")
+	fmt.Println("🚀 Servidor con Auth corriendo en http://localhost:8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		fmt.Println("Error al iniciar servidor:", err)
 	}
