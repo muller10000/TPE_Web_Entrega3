@@ -1,9 +1,18 @@
 package views
 
-// Renderiza el formulario para crear entidades. Notar que el action apunta a /peliculas con método POST.
-
 templ MovieForm() {
-	<form id="form-pelicula" action="/peliculas" method="POST" class="form-container">
+	// Formulario reactivo con HTMX
+	// hx-post: Envía datos a /peliculas sin recargar
+	// hx-target: La respuesta del servidor (la nueva lista) reemplazará a #movie-list-container
+	// hx-on::after-request: script para limpiar los inputs si salió todo bien
+	<form 
+		id="form-pelicula" 
+		class="form-container"
+		hx-post="/peliculas" 
+		hx-target="#movie-list-container" 
+		hx-swap="outerHTML"
+		hx-on::after-request="if(event.detail.successful) this.reset()"
+	>
 		<h2>Agregar Nueva Película</h2>
 		<div class="form-grid">
 			<div>

@@ -1,70 +1,73 @@
-Trabajo Práctico Especial - Programación Web (Entrega 5)
+Trabajo Práctico Especial - Programación Web (Entrega 6)
 
 📋 Descripción del Proyecto
 
-Este repositorio contiene la 5ta entrega del Trabajo Práctico Especial, centrada en la refactorización arquitectónica hacia Server-Side Rendering (SSR).
+Este repositorio contiene la 6ta entrega del Trabajo Práctico Especial, enfocada en la evolución de la aplicación hacia una arquitectura de Interfaz Reactiva con HTMX.
 
-El objetivo principal de esta etapa fue eliminar la dependencia de JavaScript en el cliente (SPA/AJAX) y migrar toda la lógica de presentación al servidor utilizando Go y la librería de templating Templ.
-
--------------------------------------------------------
+El objetivo principal de esta etapa fue transformar la aplicación SSR (Server-Side Rendering) tradicional de la entrega anterior en una experiencia similar a una SPA (Single Page Application), eliminando las recargas completas de página al crear o eliminar entidades, pero manteniendo la simplicidad del backend en Go.
 
 🚀 Evolución de la Arquitectura
 
-En la entrega anterior (TP4), el renderizado se realizaba en el cliente mediante JavaScript manipulando el DOM. La interacción dependía de llamadas asíncronas (AJAX/fetch), los datos viajaban en formato JSON y el estado de la aplicación era efímero en el cliente. Existía una alta dependencia de archivos JavaScript complejos.
+En la entrega anterior (TP5), la aplicación dependía de recargas completas de página para cada interacción (patrón Post-Redirect-Get). Cada vez que se creaba o eliminaba una película, el navegador debía volver a cargar todos los recursos (CSS, Scripts, Layout).
 
-En la entrega actual (TP5), el renderizado ocurre completamente en el servidor utilizando Go y Templ. La interacción se basa en estándares web clásicos como formularios HTML y redirecciones (patrón PRG). Los datos viajan directamente como HTML listo para mostrar. El estado es persistente, residiendo en la URL y la base de datos. Se ha logrado una dependencia nula de JavaScript en el cliente (0% JS).
-
--------------------------------------------------------- 
+En la entrega actual (TP6), se ha integrado la librería HTMX. Ahora, las interacciones ocurren mediante AJAX transparente. El servidor ya no responde con redirecciones, sino con fragmentos de HTML específicos (componentes) que actualizan solo las partes necesarias del DOM (la lista de películas), logrando una experiencia de usuario fluida e instantánea sin parpadeos.
 
 ⚙️ Instrucciones de Ejecución (Todo en Uno)
 
-Para facilitar la corrección y el despliegue, se ha automatizado todo el ciclo de vida del proyecto (generación de código, construcción de imagen y levantamiento de servicios) en un único script.
+Para facilitar la corrección, se ha automatizado todo el ciclo de vida del proyecto en un único script.
 
-Requisitos Previos:
+Requisitos Previos
 
-- Docker y Docker Compose instalados.
+Docker y Docker Compose instalados.
 
-- (Opcional) go, templ y sqlc si se desea ejecutar localmente sin Docker.
+(Opcional) go, templ y sqlc si se desea ejecutar localmente sin contenedores.
 
------------------------------------------------------------
+▶️ Paso a Paso para Clonar y Ejecutar
 
-▶️ Paso a Paso
+Clonar el repositorio:
+Asegúrese de ubicarse en la rama entrega6 tras clonar.
 
-1) Clonar el repositorio y ubicarse en la rama correspondiente.
+git clone <URL_DEL_REPOSITORIO>
+cd <NOMBRE_DEL_PROYECTO>
+git checkout entrega6
 
-2) Crear archivo de entorno: Copiar el contenido de .env.example en un nuevo archivo llamado .env.
+Crear archivo de entorno:
+Copie el contenido de .env.example en un nuevo archivo llamado .env en la raíz del proyecto.
 
-3) Ejecutar el script maestro:
-
-Abre una terminal en la raíz del proyecto y ejecuta los siguientes comandos:
+Ejecutar el script maestro:
+Desde la terminal en la raíz del proyecto, ejecute:
 
 chmod +x runtest.sh
 ./runtest.sh
 
-¿Qué hace este script?
+¿Qué realiza este script?
 
-- Generación de Código: Ejecuta sqlc generate y templ generate para asegurar que los modelos de base de datos y las vistas HTML estén actualizados y compilados a Go antes de construir la aplicación.
+Generación de Código: Ejecuta sqlc generate y templ generate para asegurar que los binarios coincidan con las últimas definiciones de vistas y base de datos.
 
-- Limpieza: Ejecuta docker compose down -v para garantizar un entorno de pruebas limpio, eliminando contenedores y volúmenes de ejecuciones anteriores (la base de datos inicia vacía).
+Limpieza Profunda: Ejecuta docker compose down -v para eliminar contenedores previos y volúmenes, garantizando que la base de datos inicie desde cero con el esquema limpio.
 
-- Construcción: Crea la imagen de Docker optimizada utilizando el Dockerfile del proyecto.
+Construcción: Crea la imagen de Docker optimizada.
 
-- Despliegue: Levanta los servicios de base de datos y la aplicación en el puerto 8080 en segundo plano.
+Despliegue: Levanta los servicios (API + DB) en segundo plano.
 
-- Verificación: Realiza un health-check automático mediante curl para confirmar que el servidor SSR está respondiendo con un código HTTP 200 OK.
-
-------------------------------------------------------------
+Validación: Realiza un health-check y una prueba de creación automática para verificar que el sistema responde correctamente.
 
 🌐 Acceso a la Aplicación
 
-Una vez que el script finalice y muestre el mensaje de éxito, la aplicación estará disponible en tu navegador web.
+Una vez que el script finalice exitosamente, la aplicación estará disponible en:
 
-Dirección de acceso: http://localhost:8080
+👉 http://localhost:8080
 
-Desde allí podrá realizar las siguientes acciones:
+Prueba de Interactividad (Validación de HTMX)
 
-Listar: Ver la tabla de películas renderizada directamente desde el servidor.
+Para comprobar que la implementación de HTMX es correcta:
 
-Crear: Usar el formulario para agregar nuevas películas. Al enviar, el servidor procesará los datos y redirigirá a la lista actualizada (patrón Post-Redirect-Get).
+Abra las herramientas de desarrollador del navegador (F12) y vaya a la pestaña "Network" (Red).
 
-Eliminar: Borrar registros mediante los botones de eliminar, que funcionan como formularios POST embebidos.
+Complete el formulario y haga clic en "Agregar Película".
+
+Verá que se realiza una petición POST, pero la página no se recarga (el icono de carga del navegador no gira).
+
+La respuesta de esa petición será únicamente el fragmento HTML de la lista de películas, no la página completa.
+
+Lo mismo ocurrirá al hacer clic en "Eliminar".

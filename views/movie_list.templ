@@ -1,32 +1,46 @@
 package views
 
-// Recibe el slice de películas y renderiza la tabla. se incluye el formulario para borrar usando el truco del POST.
-
 import (
 	"fmt"
 	"github.com/muller10000/TPE_Web_Entrega3/repository"
 )
 
-templ MovieList(movies []repository.Movie) {
-	<h2>Películas en el Catálogo</h2>
-	
-	<div class="stats">
-		<p>Total de películas: <span>{ fmt.Sprintf("%d", len(movies)) }</span></p>
-	</div>
+// MovieList renderiza la lista de películas.
+// componente independiente que HTMX puede actualizar.
 
-	<div class="films">
-		for _, item := range movies {
-			<div class="film">
-				<h3>{ item.Title }</h3>
-				<p><strong>Director:</strong> { item.Director.String }</p>
-				<p><strong>Año:</strong> { fmt.Sprintf("%d", item.Year.Int32) }</p>
-				<p><strong>Género:</strong> { item.Genre.String }</p>
-				<p><strong>Calificación:</strong> <span class="rating-badge">{ item.Rating.String } / 10</span></p>
-				
-				<form action={ templ.SafeURL(fmt.Sprintf("/peliculas/delete/%d", item.ID)) } method="POST">
-					<button type="submit" class="delete-btn">Eliminar</button>
-				</form>
-			</div>
-		}
+templ MovieList(movies []repository.Movie) {
+	// ID: HTMX usará este selector para reemplazar el contenido
+	<div id="movie-list-container">
+		<h2>Películas en el Catálogo</h2>
+		
+		<div class="stats">
+			<p>Total de películas: <span>{ fmt.Sprintf("%d", len(movies)) }</span></p>
+		</div>
+
+		<div class="films">
+			for _, item := range movies {
+				<div class="film">
+					<h3>{ item.Title }</h3>
+					<p><strong>Director:</strong> { item.Director.String }</p>
+					<p><strong>Año:</strong> { fmt.Sprintf("%d", item.Year.Int32) }</p>
+					<p><strong>Género:</strong> { item.Genre.String }</p>
+					<p><strong>Calificación:</strong> <span class="rating-badge">{ item.Rating.String } / 10</span></p>
+					
+					// Botón de eliminar con HTMX
+					// hx-delete: Envía DELETE a /peliculas/{id}
+					// hx-target: Actualiza toda la lista (#movie-list-container) con la respuesta
+					// hx-swap: Reemplaza el HTML exterior del target
+					<button 
+						class="delete-btn"
+						hx-delete={ fmt.Sprintf("/peliculas/%d", item.ID) }
+						hx-target="#movie-list-container"
+						hx-swap="outerHTML"
+						hx-confirm="¿Estás seguro de eliminar esta película?"
+					>
+						Eliminar
+					</button>
+				</div>
+			}
+		</div>
 	</div>
 }

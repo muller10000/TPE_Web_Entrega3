@@ -25,26 +25,37 @@ func connectDB() (*sql.DB, error) {
 }
 
 func main() {
-	// 1. Servir archivos estáticos (CSS, Imágenes)
+	// Servir estáticos (CSS)
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
-	// 2. Conexión DB
 	db, err := connectDB()
 	if err != nil {
 		panic(err)
 	}
 	queries := repository.New(db)
 
-	// 3. Inicializar Handlers
 	h := handlers.NewHandlerPeliculas(queries)
 
-	// 4. Definir Rutas (SSR)
-	http.HandleFunc("/", h.HandleIndex)                   // GET: Ver lista y form
-	http.HandleFunc("/peliculas", h.HandleCreate)         // POST: Crear
-	http.HandleFunc("/peliculas/delete/", h.HandleDelete) // POST: Eliminar
+	// Definición de Rutas
 
-	fmt.Println("Servidor SSR corriendo en http://localhost:8080")
+	// 1. Carga Inicial (Página completa)
+	http.HandleFunc("/", h.HandleIndex)
+
+	// 2. Creación (AJAX vía HTMX)
+	http.HandleFunc("POST /peliculas", h.HandleCreate)
+
+	// 3. Eliminación (AJAX vía HTMX)
+	// Manejo manual del método DELETE para compatibilidad
+	http.HandleFunc("/peliculas/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodDelete {
+			h.HandleDelete(w, r)
+		} else {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+
+	fmt.Println("Servidor HTMX corriendo en http://localhost:8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		fmt.Println("Error al iniciar servidor:", err)
 	}
